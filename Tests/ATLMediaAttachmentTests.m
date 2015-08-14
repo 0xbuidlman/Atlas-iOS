@@ -206,9 +206,19 @@
     ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
     ALAsset *sourceAsset = ATLVideoAssetTestObtainLastVideoFromAssetLibrary(library);
     expect(sourceAsset).toNot.beNil();
-    
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, 1, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    int count;
+
     NSURL *lastVideoURL = sourceAsset.defaultRepresentation.url;
-    
+    //video length
+    ALAssetRepresentation *rep = [sourceAsset defaultRepresentation];
+    Byte *buffer1 = (Byte*)malloc(rep.size);
+    NSError *error = nil;
+    NSUInteger buffered = [rep getBytes:buffer1 fromOffset:0.0 length:rep.size error:&error];
+    NSData *data1 = [NSData dataWithBytesNoCopy:buffer1 length:buffered freeWhenDone:YES];
+    NSLog(@"Size of video %lu",(unsigned long)data1.length);
+
     expect(lastVideoURL).willNot.beNil();
     
     ATLMediaAttachment *mediaAttachment = [ATLMediaAttachment mediaAttachmentWithAssetURL:lastVideoURL thumbnailSize:512];
@@ -244,9 +254,18 @@
     
     [stream close];
     expect(stream.streamError).to.beNil();
+    expect(stream.streamStatus).to.equal(NSStreamStatusClosed);
     NSString *path = [NSString stringWithFormat:@"%@test.mp4", NSTemporaryDirectory()];
     [data writeToFile:path atomically:NO];
     NSLog(@"check file: %@ length=%lu", path, data.length);
+    expect(data1.length).to.equal(data.length);
+
+    NSArray *directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:documentsDirectory error:NULL];
+    for (count = 0; count < (int)[directoryContent count]; count++)
+    {
+        NSLog(@"File %d: %@", (count + 1), [directoryContent objectAtIndex:count]);
+    }
+    expect([directoryContent count]).to.equal(0);
 
     // Verifying thumbnail content
     NSData *thumbnailPayload = ATLTestAttachmentDataFromStream(mediaAttachment.thumbnailInputStream);
@@ -258,8 +277,6 @@
     // Verifying image metadata JSON
     NSData *imageSizeMetadataJSON = ATLTestAttachmentDataFromStream(mediaAttachment.metadataInputStream);
     expect(imageSizeMetadataJSON).toNot.beNil();
-
-
 }
 
 @end

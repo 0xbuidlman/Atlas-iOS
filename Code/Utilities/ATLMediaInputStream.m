@@ -499,21 +499,19 @@ static size_t ATLMediaInputStreamPutBytesIntoStreamCallback(void *assetStreamRef
     self.exportSession = nil;
     self.tempVideoURL = nil;
     self.dataConsumed = nil;
+    self.mediaStreamStatus = NSStreamStatusClosed;
 }
 
 -(void)removeTempFile
 {
     NSError *error;
-    NSString *outputpathString;
-    NSString *path;
-        outputpathString = [[NSString stringWithFormat:@"%@",self.exportSession.outputURL] substringFromIndex:7];
-        path = outputpathString;
+    //substring to remove the prepended "file://" string
+    NSString *path = [[NSString stringWithFormat:@"%@",self.exportSession.outputURL] substringFromIndex:7];
     
     NSFileManager *fileManager = [NSFileManager defaultManager];
     
     if([fileManager fileExistsAtPath:path] == YES)
     {
-        NSFileManager *fileManager = [NSFileManager defaultManager];
         [fileManager removeItemAtPath:path error:&error];
         if (error) {
             self.mediaStreamStatus = NSStreamStatusError;
